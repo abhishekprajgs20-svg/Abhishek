@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ABHISHEK</string>
+    <string name="title_activity_main">ABHISHEK</string>
+    <string name="package_name">com.abhishek.app</string>
+    <string name="custom_url_scheme">com.abhishek.app</string>
+</resources>

@@ -1,0 +1,19 @@
+{
+  "name": "abhishek-app",
+  "version": "1.0.0",
+  "description": "ABHISHEK tools hub app",
+  "main": "index.js",
+  "scripts": {
+    "prep": "node scripts/prepare.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/share": "^8.0.3"
+  }
+}

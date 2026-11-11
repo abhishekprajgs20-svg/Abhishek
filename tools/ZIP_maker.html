@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Offline ZIP Maker</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#121a2d;--line:#283651;--muted:#aab7ce;--text:#f4f7ff;--accent:#7c5cff;--accent2:#21c7a8}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182342 0%,var(--bg) 58%);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh;padding:24px}
+main{max-width:900px;margin:auto}.hero{text-align:center;padding:22px 8px 26px}.logo{font-size:42px}h1{font-size:clamp(28px,5vw,42px);margin:8px 0}p{color:var(--muted);line-height:1.6}.panel{background:rgba(18,26,45,.94);border:1px solid var(--line);border-radius:22px;padding:22px;margin:16px 0;box-shadow:0 18px 50px #0003}
+.drop{display:block;border:2px dashed #56678a;border-radius:18px;padding:34px 16px;text-align:center;cursor:pointer;transition:.2s}.drop:hover,.drop.drag{border-color:var(--accent2);background:#21c7a80d}.drop strong{display:block;font-size:20px;margin:10px 0}.drop small{color:var(--muted)}input[type=file]{display:none}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}button{border:0;border-radius:12px;padding:12px 17px;font-size:15px;font-weight:700;cursor:pointer;background:#263550;color:var(--text)}button.primary{background:linear-gradient(135deg,var(--accent),#5c8dff)}button:disabled{opacity:.45;cursor:not-allowed}.summary{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px;margin:14px 0}.pill{background:#202d47;border-radius:999px;padding:7px 11px}
+.filelist{display:grid;gap:8px;margin-top:16px}.file{display:flex;align-items:center;gap:12px;background:#0d1425;border:1px solid #25324a;padding:11px 12px;border-radius:12px}.file .name{overflow-wrap:anywhere;flex:1}.file .meta{color:var(--muted);font-size:12px;white-space:nowrap}.remove{padding:7px 10px;background:#3a2434;color:#ffb9cc}.progress{height:8px;background:#25324a;border-radius:99px;overflow:hidden;margin-top:14px}.bar{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s}.status{margin-top:12px;color:var(--muted);font-size:14px}.note{font-size:13px}.namebox{margin-top:16px}.namebox label{display:block;font-size:14px;color:var(--muted);margin-bottom:6px}.nameinput{display:flex;align-items:center;background:#0d1425;border:1px solid #25324a;border-radius:12px;padding:0 12px}.nameinput:focus-within{border-color:var(--accent2)}.nameinput input{flex:1;background:none;border:0;outline:0;color:var(--text);font-size:15px;padding:12px 0}.nameinput span{color:var(--muted)}.file .name{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}.footer{text-align:center;color:#71809c;font-size:12px;padding:14px}
+</style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="logo">🗂️✨</div>
+    <h1>Offline ZIP Maker</h1>
+    <p>फ़ाइलें <b>और पूरे फ़ोल्डर</b> चुनें — सब-फ़ोल्डर्स समेत। ZIP के अंदर फ़ोल्डर का स्ट्रक्चर बिल्कुल असली जैसा रहेगा।<br>सब कुछ एक ही ZIP में, बिना इंटरनेट और बिना अपलोड किए।</p>
+  </header>
+  <section class="panel">
+    <label class="drop" id="drop">
+      <div style="font-size:34px">📂</div>
+      <strong>फ़ाइलें / फ़ोल्डर यहाँ छोड़ें, या फ़ाइलें चुनने के लिए क्लिक करें</strong>
+      <small>फ़ोल्डर को drag-and-drop करें या नीचे “फ़ोल्डर जोड़ें” बटन दबाएँ</small>
+      <input id="picker" type="file" multiple>
+      <input id="folderPicker" type="file" webkitdirectory directory multiple>
+    </label>
+    <div class="summary">
+      <span class="pill" id="count">0 फ़ाइलें</span>
+      <span class="pill" id="dirs">0 फ़ोल्डर</span>
+      <span class="pill" id="size">कुल आकार: 0 B</span>
+      <span class="pill">🔒 फ़ाइलें आपके डिवाइस पर ही रहती हैं</span>
+    </div>
+    <div class="namebox"><label for="zipName">📝 ZIP फ़ाइल का नाम</label><div class="nameinput"><input id="zipName" type="text" value="My_Files" maxlength="120" placeholder="जैसे: My_Files" autocomplete="off"><span>.zip</span></div></div>
+    <div class="actions">
+      <button class="primary" id="zipBtn" disabled>📦 ZIP बनाएँ और डाउनलोड करें</button>
+      <button id="addBtn">＋ फ़ाइलें जोड़ें</button>
+      <button id="addFolderBtn">📁 फ़ोल्डर जोड़ें</button>
+      <button id="clearBtn">🗑️ सभी हटाएँ</button>
+    </div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="status" id="status" role="status">पहले फ़ाइलें चुनें।</div>
+    <div class="filelist" id="filelist"></div>
+  </section>
+  <section class="panel">
+    <strong>💡 इस्तेमाल कैसे करें?</strong>
+    <p class="note">1. इस HTML फ़ाइल को Chrome, Edge या Firefox में खोलें।<br>2. फ़ाइलें / फ़ोल्डर चुनें या बॉक्स में drag-and-drop करें (फ़ोल्डर के अंदर के फ़ोल्डर भी अपने-आप आ जाएँगे)।<br>3. ZIP का नाम लिखें और “ZIP बनाएँ” दबाएँ।<br><br><b>ध्यान दें:</b> यह टूल पूरी तरह ऑफलाइन है। ZIP फ़ॉर्मैट में पैक की गई फ़ाइलों के अंदर का कंटेंट बदला नहीं जाता। बहुत बड़ी फ़ाइलों/बहुत अधिक फ़ाइलों के लिए आपके ब्राउज़र और डिवाइस की मेमोरी मायने रखेगी।</p>
+  </section>
+  <div class="footer">OFFLINE • PRIVATE • NO ACCOUNT • NO UPLOAD</div>
+</main>
+<script>
+/* Offline ZIP writer (DEFLATE via CompressionStream). Supports files + nested folders.
+   ZIP headers use UTF-8 filenames. All work is performed locally. */
+const $ = id => document.getElementById(id);
+let items = [];   // {file:File|null, path:'a/b/c.txt' or 'a/b/' (dir), dir:boolean, size:number}
+const enc = new TextEncoder();
+const fmt = n => {
+  if (!Number.isFinite(n)) return '—';
+  const units=['B','KB','MB','GB','TB']; let i=0;
+  while(n>=1024 && i<units.length-1){n/=1024;i++}
+  return `${n.toLocaleString(undefined,{maximumFractionDigits:i?2:0})} ${units[i]}`;
+};
+const u16 = n => [n & 255, (n >>> 8) & 255];
+const u32 = n => [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255];
+function concat(parts){let len=parts.reduce((s,p)=>s+p.length,0),out=new Uint8Array(len),at=0;for(const p of parts){out.set(p,at);at+=p.length}return out}
+const CRC_TABLE=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(c>>>1)^0xedb88320:c>>>1;t[n]=c>>>0}return t})();
+function crc32(data){let c=0xffffffff;for(let i=0;i<data.length;i++)c=CRC_TABLE[(c^data[i])&255]^(c>>>8);return (c^0xffffffff)>>>0}
+function dosDateTime(date=new Date()){
+  const year=Math.max(1980,date.getFullYear());
+  return {time:(date.getHours()<<11)|(date.getMinutes()<<5)|(Math.floor(date.getSeconds()/2)),
+          date:((year-1980)<<9)|((date.getMonth()+1)<<5)|date.getDate()};
+}
+async function deflateRaw(bytes){
+  if(typeof CompressionStream==='undefined') throw new Error('इस ब्राउज़र में ZIP compression उपलब्ध नहीं है। कृपया Chrome/Edge का नया संस्करण इस्तेमाल करें।');
+  let cs;
+  try { cs = new CompressionStream('deflate-raw'); }
+  catch(e){ throw new Error('इस ब्राउज़र में raw DEFLATE उपलब्ध नहीं है। कृपया Chrome/Edge का नया संस्करण इस्तेमाल करें।'); }
+  const writer=cs.writable.getWriter(); writer.write(bytes); writer.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+
+/* ---------- path helpers ---------- */
+function cleanPath(p){
+  return p.replace(/\\/g,'/').split('/').filter(s=>s && s!=='.' && s!=='..').join('/');
+}
+function addItem(path,file,dir){
+  path=cleanPath(path); if(!path) return;
+  if(dir) path+='/';
+  if(items.some(x=>x.path===path && x.dir===dir && x.file===file)) return;
+  items.push({file:file||null,path,dir,size:file?file.size:0});
+}
+
+/* ---------- rendering ---------- */
+function render(){
+  const nFiles=items.filter(x=>!x.dir).length, nDirs=items.filter(x=>x.dir).length;
+  const topDirs=new Set(); items.forEach(x=>{const p=x.path.split('/'); if(p.length>1||x.dir) topDirs.add(p[0])});
+  const allDirs=new Set(); items.forEach(x=>{const p=x.path.split('/').filter(Boolean); const n=x.dir?p.length:p.length-1; for(let i=1;i<=n;i++)allDirs.add(p.slice(0,i).join('/'))});
+  $('count').textContent=`${nFiles} फ़ाइल${nFiles===1?'':'ें'}`;
+  $('dirs').textContent=`${allDirs.size} फ़ोल्डर`;
+  $('size').textContent=`कुल आकार: ${fmt(items.reduce((s,f)=>s+f.size,0))}`;
+  $('zipBtn').disabled=!items.length;
+  const frag=document.createDocumentFragment();
+  [...items].map((it,i)=>({it,i})).sort((a,b)=>a.it.path.localeCompare(b.it.path)).forEach(({it,i})=>{
+    const row=document.createElement('div'); row.className='file';
+    const ico=document.createElement('span'); ico.textContent=it.dir?'📁':'📄';
+    const name=document.createElement('span'); name.className='name'; name.textContent=it.path;
+    const meta=document.createElement('span'); meta.className='meta'; meta.textContent=it.dir?'खाली फ़ोल्डर':fmt(it.size);
+    const rm=document.createElement('button'); rm.className='remove'; rm.textContent='हटाएँ'; rm.onclick=()=>{items.splice(i,1);render()};
+    row.append(ico,name,meta,rm); frag.append(row);
+  });
+  $('filelist').replaceChildren(frag);
+}
+
+/* ---------- adding files / folders ---------- */
+function addPlainFiles(list){
+  const arr=Array.from(list||[]);
+  arr.forEach(f=>addItem(f.webkitRelativePath||f.name,f,false));
+  render();
+  if(arr.length) $('status').textContent=`${arr.length} नई फ़ाइल${arr.length===1?'':'ें'} जोड़ी गईं।`;
+}
+const readAll = reader => new Promise((res,rej)=>{
+  const all=[]; (function next(){ reader.readEntries(b=>{ if(!b.length) return res(all); all.push(...b); next(); },rej); })();
+});
+async function walk(entry){
+  if(entry.isFile){
+    const f=await new Promise((res,rej)=>entry.file(res,rej));
+    addItem(entry.fullPath,f,false);
+  }else if(entry.isDirectory){
+    const kids=await readAll(entry.createReader());
+    if(!kids.length) addItem(entry.fullPath,null,true);   // empty folder is preserved
+    for(const k of kids) await walk(k);
+  }
+}
+async function handleDrop(dt){
+  // entries must be collected synchronously, before any await
+  const entries=[...(dt.items||[])].map(i=>i.webkitGetAsEntry?i.webkitGetAsEntry():null);
+  if(entries.length && entries.every(Boolean)){
+    $('status').textContent='फ़ोल्डर पढ़े जा रहे हैं…';
+    const before=items.length;
+    try{ for(const e of entries) await walk(e); }catch(err){ $('status').textContent='❌ फ़ोल्डर पढ़ने में दिक्कत: '+(err?.message||err); }
+    render();
+    $('status').textContent=`${items.length-before} आइटम जोड़े गए।`;
+  }else addPlainFiles(dt.files);
+}
+$('picker').addEventListener('change',e=>{addPlainFiles(e.target.files);e.target.value=''});
+$('folderPicker').addEventListener('change',e=>{
+  const list=Array.from(e.target.files||[]); list.forEach(f=>addItem(f.webkitRelativePath||f.name,f,false));
+  render(); if(list.length) $('status').textContent=`फ़ोल्डर से ${list.length} फ़ाइलें जोड़ी गईं (सब-फ़ोल्डर्स समेत)।`;
+  e.target.value='';
+});
+$('addBtn').onclick=()=>$('picker').click();
+$('addFolderBtn').onclick=()=>$('folderPicker').click();
+$('clearBtn').onclick=()=>{items=[];render();$('bar').style.width='0%';$('status').textContent='सभी आइटम हटा दिए गए।'};
+const drop=$('drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('drag')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('drag'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('drag');handleDrop(e.dataTransfer)});
+// prevent browser from opening a file dropped outside the box
+['dragover','drop'].forEach(ev=>window.addEventListener(ev,e=>e.preventDefault()));
+
+/* ---------- unique paths (same full path → "name (2).ext") ---------- */
+function uniquePaths(list){
+  const seen=new Set();
+  return list.map(it=>{
+    if(it.dir){ seen.add(it.path.toLowerCase()); return it.path; }
+    let p=it.path;
+    if(seen.has(p.toLowerCase())){
+      const slash=p.lastIndexOf('/'),dir=p.slice(0,slash+1),n=p.slice(slash+1);
+      const dot=n.lastIndexOf('.'),base=dot>0?n.slice(0,dot):n,ext=dot>0?n.slice(dot):'';
+      let c=2; while(seen.has((dir+`${base} (${c})${ext}`).toLowerCase())) c++;
+      p=dir+`${base} (${c})${ext}`;
+    }
+    seen.add(p.toLowerCase()); return p;
+  });
+}
+function zipFileName(){
+  let n=$('zipName').value.replace(/[\\/:*?"<>|\u0000-\u001f]/g,'').trim().replace(/\.zip$/i,'').trim().replace(/[. ]+$/,'');
+  return (n||'My_Files')+'.zip';
+}
+
+/* ---------- build ZIP ---------- */
+$('zipBtn').onclick=async()=>{
+  if(!items.length)return;
+  const btns=['zipBtn','addBtn','addFolderBtn','clearBtn'];
+  btns.forEach(b=>$(b).disabled=true);
+  $('bar').style.width='0%';$('status').textContent='ZIP तैयार हो रही है…';
+  try{
+    const list=items.slice(), paths=uniquePaths(list), localParts=[], centralParts=[], zipName=zipFileName();
+    let offset=0;const dt=dosDateTime();
+    for(let i=0;i<list.length;i++){
+      const it=list[i], nameBytes=enc.encode(paths[i]);
+      let raw,compressed,crc,method,extAttr;
+      if(it.dir){ raw=new Uint8Array(0); compressed=raw; crc=0; method=0; extAttr=0x10; }
+      else{ raw=new Uint8Array(await it.file.arrayBuffer()); compressed=await deflateRaw(raw); crc=crc32(raw); method=8; extAttr=0; }
+      if(raw.length>0xffffffff-1 || list.length>65534) throw new Error('यह ZIP मानक (non-ZIP64) सीमा से बड़ी है — फ़ाइलें कम करें या कई ZIP बनाएँ।');
+      const localHeader=new Uint8Array([
+        ...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(method),...u16(dt.time),...u16(dt.date),
+        ...u32(crc),...u32(compressed.length),...u32(raw.length),...u16(nameBytes.length),...u16(0),...nameBytes
+      ]);
+      localParts.push(localHeader,compressed);
+      centralParts.push(new Uint8Array([
+        ...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(method),...u16(dt.time),...u16(dt.date),
+        ...u32(crc),...u32(compressed.length),...u32(raw.length),...u16(nameBytes.length),...u16(0),...u16(0),
+        ...u16(0),...u16(0),...u32(extAttr),...u32(offset),...nameBytes
+      ]));
+      offset+=localHeader.length+compressed.length;
+      $('bar').style.width=`${Math.round(((i+1)/list.length)*90)}%`;
+      $('status').textContent=`आइटम ${i+1}/${list.length} पैक हो रहा है: ${paths[i]}`;
+    }
+    const centralSize=centralParts.reduce((s,p)=>s+p.length,0);
+    const end=new Uint8Array([
+      ...u32(0x06054b50),...u16(0),...u16(0),...u16(list.length),...u16(list.length),
+      ...u32(centralSize),...u32(offset),...u16(0)
+    ]);
+    const zip=concat([...localParts,...centralParts,end]);
+    const url=URL.createObjectURL(new Blob([zip],{type:'application/zip'}));
+    const a=document.createElement('a');a.href=url;a.download=zipName;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    $('bar').style.width='100%';$('status').textContent=`✅ तैयार! ${list.length} आइटम ${zipName} में पैक किए गए।`;
+  }catch(err){
+    $('status').textContent='❌ ZIP नहीं बन पाई: '+(err?.message||String(err));
+    $('bar').style.width='0%';
+  }finally{
+    ['addBtn','addFolderBtn','clearBtn'].forEach(b=>$(b).disabled=false); $('zipBtn').disabled=!items.length;
+  }
+};
+render();
+</script>
+</body>
+</html>

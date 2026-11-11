@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Optimizer & Merger Pro</title>
+    
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <!-- pdf.js for rendering thumbnails -->
+    <script src="https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';</script>
+    <!-- SortableJS for drag and drop reordering -->
+    <script src="https://unpkg.com/sortablejs@1.15.2/Sortable.min.js"></script>
+    <!-- Canvas Confetti for success animation -->
+    <script src="https://unpkg.com/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            /* Dark Theme (Default) */
+            --bg-color: #0f172a;
+            --surface-color: #1e293b;
+            --primary-color: #3b82f6;
+            --primary-hover: #2563eb;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --danger-hover: #dc2626;
+            --border-radius: 12px;
+            --card-bg: rgba(255,255,255,0.05);
+            --border-color: #475569;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f1f5f9;
+            --surface-color: #ffffff;
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success-color: #10b981;
+            --card-bg: #f8fafc;
+            --border-color: #cbd5e1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header-top {
+            width: 100%;
+            max-width: 850px;
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        .theme-toggle {
+            background: var(--surface-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+            background-color: var(--surface-color);
+            padding: 2.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        h1 {
+            margin-top: 0;
+            text-align: center;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        /* Settings Panel */
+        .settings-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .setting-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .setting-input {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--surface-color);
+            color: var(--text-main);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary-color);
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+
+        .upload-icon { font-size: 3rem; margin-bottom: 1rem; }
+
+        .file-list {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .file-item {
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-color);
+            cursor: grab;
+        }
+        
+        .file-item:active { cursor: grabbing; }
+
+        .file-main-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .thumbnail-container {
+            width: 60px; height: 80px;
+            background: #fff;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ccc;
+        }
+        
+        .thumbnail-container canvas {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+        }
+
+        .file-info { display: flex; flex-direction: column; }
+        .file-name { font-weight: 600; font-size: 1.1rem; margin-bottom: 0.25rem; }
+        .file-stats { font-size: 0.85rem; color: var(--text-muted); }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background-color: var(--primary-color); color: white;
+            border: none; padding: 0.5rem 1rem; border-radius: 6px;
+            font-weight: 600; cursor: pointer; transition: background 0.2s;
+            text-decoration: none; display: inline-block; font-size: 0.9rem;
+        }
+        .btn:hover { background-color: var(--primary-hover); }
+        
+        .btn-danger { background-color: var(--danger-color); padding: 0.5rem; }
+        .btn-danger:hover { background-color: var(--danger-hover); }
+
+        .btn-success {
+            background-color: var(--success-color); font-size: 1.1rem;
+            padding: 1rem 2rem; width: 100%; margin-top: 2rem;
+            box-sizing: border-box; text-align: center;
+        }
+        .btn-success:hover { background-color: #059669; }
+
+        .hidden { display: none !important; }
+        
+        .badge {
+            background: #4f46e5; color: white; padding: 2px 6px;
+            border-radius: 4px; font-size: 0.75rem; margin-left: 8px;
+        }
+        .badge.even { background: #059669; }
+
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; flex-direction: column; color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="header-top">
+        <button class="theme-toggle" id="themeToggle">🌓 Toggle Theme</button>
+    </div>
+
+    <div class="container">
+        <h1>PDF Optimizer & Merger</h1>
+        <p class="subtitle">Upload, reorder, preview, and combine PDFs perfectly offline.</p>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel">
+            <div class="setting-item">
+                <div class="setting-header">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="watermarkToggle">
+                        <span class="slider"></span>
+                    </label>
+                    Custom Watermark
+                </div>
+                <input type="text" id="watermarkText" class="setting-input hidden" placeholder="e.g. CONFIDENTIAL">
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-header">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="pageNumToggle">
+                        <span class="slider"></span>
+                    </label>
+                    Add Page Numbers
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-header">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="blankTextToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    "Intentionally Left Blank" Text
+                </div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin:0;">Prints text on added even pages.</p>
+            </div>
+        </div>
+
+        <!-- Upload Area -->
+        <div class="upload-area" id="dropZone">
+            <div class="upload-icon">📄</div>
+            <h3>Drag & Drop your PDFs here</h3>
+            <p>or click to browse</p>
+            <input type="file" id="fileInput" multiple accept="application/pdf">
+        </div>
+
+        <!-- Results Area -->
+        <div id="resultsArea" class="hidden">
+            <h3 style="margin-top:2rem;">Uploaded Files (Drag to reorder)</h3>
+            <div class="file-list" id="fileList"></div>
+            <button id="mergeBtn" class="btn btn-success">Merge All PDFs</button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="hidden">
+        <div class="spinner"></div>
+        <h2 style="margin-top: 1rem;" id="loadingText">Processing...</h2>
+    </div>
+
+    <script>
+        const { PDFDocument, rgb, degrees } = PDFLib;
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const fileList = document.getElementById('fileList');
+        const resultsArea = document.getElementById('resultsArea');
+        const mergeBtn = document.getElementById('mergeBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Settings toggles
+        const watermarkToggle = document.getElementById('watermarkToggle');
+        const watermarkText = document.getElementById('watermarkText');
+        const pageNumToggle = document.getElementById('pageNumToggle');
+        const blankTextToggle = document.getElementById('blankTextToggle');
+
+        let processedFilesMap = new Map(); // map id -> fileData
+
+        // Theme Toggle Logic
+        themeToggle.addEventListener('click', () => {
+            const current = document.body.getAttribute('data-theme');
+            if (current === 'light') {
+                document.body.removeAttribute('data-theme');
+            } else {
+                document.body.setAttribute('data-theme', 'light');
+            }
+        });
+
+        // Watermark Input reveal
+        watermarkToggle.addEventListener('change', (e) => {
+            if(e.target.checked) watermarkText.classList.remove('hidden');
+            else watermarkText.classList.add('hidden');
+        });
+
+        // Initialize SortableJS
+        const sortable = new Sortable(fileList, {
+            animation: 150,
+            ghostClass: 'sortable-ghost'
+        });
+
+        // UI Event Listeners
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFiles(e.target.files);
+        });
+
+        async function handleFiles(files) {
+            showLoading("Reading files...");
+            const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+            
+            if (pdfFiles.length === 0) {
+                hideLoading(); alert("Please select valid PDF files."); return;
+            }
+
+            resultsArea.classList.remove('hidden');
+            
+            for (let i = 0; i < pdfFiles.length; i++) {
+                const file = pdfFiles[i];
+                const fileId = 'file_' + Date.now() + '_' + i;
+                loadingText.innerText = `Processing: ${file.name}`;
+                
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    
+                    // Generate Thumbnail using pdf.js
+                    const pdfjsDoc = await pdfjsLib.getDocument({data: new Uint8Array(arrayBuffer.slice(0))}).promise;
+                    const page = await pdfjsDoc.getPage(1);
+                    const viewport = page.getViewport({scale: 0.5});
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
+                    await page.render(renderContext).promise;
+                    
+                    // Process with PDF-lib
+                    const pdfDoc = await PDFDocument.load(arrayBuffer);
+                    const originalPageCount = pdfDoc.getPageCount();
+                    let wasModified = false;
+
+                    // Note: We don't modify it with blanks here anymore, we do it at Merge time 
+                    // so we can apply the optional settings globally to the final document.
+                    // Wait, the requirement was that individual downloads ALSO get the blank page.
+                    // Let's keep blank page logic here for individual downloads.
+                    
+                    if (originalPageCount % 2 !== 0) {
+                        const newPage = pdfDoc.addPage();
+                        if (blankTextToggle.checked) {
+                            const { width, height } = newPage.getSize();
+                            newPage.drawText('This page intentionally left blank', {
+                                x: width / 2 - 100, y: height / 2, size: 14, color: rgb(0.5, 0.5, 0.5)
+                            });
+                        }
+                        wasModified = true;
+                    }
+
+                    const newPageCount = pdfDoc.getPageCount();
+                    const modifiedBytes = await pdfDoc.save();
+                    const downloadUrl = URL.createObjectURL(new Blob([modifiedBytes], { type: 'application/pdf' }));
+
+                    const fileData = {
+                        id: fileId,
+                        name: file.name,
+                        bytes: modifiedBytes,
+                        url: downloadUrl,
+                        originalCount: originalPageCount,
+                        newCount: newPageCount,
+                        modified: wasModified,
+                        canvas: canvas
+                    };
+
+                    processedFilesMap.set(fileId, fileData);
+                    renderFileItem(fileData);
+                } catch (error) {
+                    console.error("Error processing file", file.name, error);
+                    alert(`Error processing ${file.name}:\n\n${error.message}`);
+                }
+            }
+
+            hideLoading();
+            fileInput.value = '';
+        }
+
+        function renderFileItem(fileData) {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.setAttribute('data-id', fileData.id);
+            
+            let statusBadge = fileData.modified ? `<span class="badge">Added Blank Page</span>` : `<span class="badge even">Even Pages (Skipped)</span>`;
+            
+            div.innerHTML = `
+                <div class="file-main-info">
+                    <div class="thumbnail-container"></div>
+                    <div class="file-info">
+                        <div class="file-name">☰ ${fileData.name} ${statusBadge}</div>
+                        <div class="file-stats">Pages: ${fileData.originalCount} ➔ ${fileData.newCount}</div>
+                    </div>
+                </div>
+                <div class="actions">
+                    <a href="${fileData.url}" download="modified_${fileData.name}" class="btn" onclick="event.stopPropagation()">Download</a>
+                    <button class="btn btn-danger" onclick="removeFile('${fileData.id}', this)">🗑️</button>
+                </div>
+            `;
+            
+            // Append canvas thumbnail safely
+            div.querySelector('.thumbnail-container').appendChild(fileData.canvas);
+            fileList.appendChild(div);
+        }
+
+        window.removeFile = function(id, btnElement) {
+            processedFilesMap.delete(id);
+            const item = btnElement.closest('.file-item');
+            if(item) item.remove();
+            
+            if(processedFilesMap.size === 0) {
+                resultsArea.classList.add('hidden');
+            }
+        }
+
+        mergeBtn.addEventListener('click', async () => {
+            // Get current sorted order from DOM
+            const items = fileList.querySelectorAll('.file-item');
+            if (items.length === 0) return;
+            
+            showLoading("Merging PDFs...");
+            try {
+                const mergedPdf = await PDFDocument.create();
+                
+                for (let i = 0; i < items.length; i++) {
+                    const id = items[i].getAttribute('data-id');
+                    const fileData = processedFilesMap.get(id);
+                    if (!fileData) continue;
+                    
+                    loadingText.innerText = `Merging file ${i + 1} of ${items.length}...`;
+                    const pdf = await PDFDocument.load(fileData.bytes);
+                    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    copiedPages.forEach((page) => mergedPdf.addPage(page));
+                }
+
+                // Apply Global Settings (Watermark & Page Numbers)
+                const pages = mergedPdf.getPages();
+                
+                for (let i = 0; i < pages.length; i++) {
+                    const page = pages[i];
+                    const { width, height } = page.getSize();
+                    
+                    // Watermark
+                    if (watermarkToggle.checked && watermarkText.value.trim() !== '') {
+                        page.drawText(watermarkText.value, {
+                            x: width / 4, y: height / 4,
+                            size: 60,
+                            color: rgb(0.8, 0.8, 0.8),
+                            opacity: 0.3,
+                            rotate: degrees(45)
+                        });
+                    }
+
+                    // Page Numbering
+                    if (pageNumToggle.checked) {
+                        page.drawText(`Page ${i + 1} of ${pages.length}`, {
+                            x: width - 100, y: 20,
+                            size: 12, color: rgb(0, 0, 0)
+                        });
+                    }
+                }
+
+                const mergedBytes = await mergedPdf.save();
+                const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+                const url = URL.createObjectURL(blob);
+                
+                // Trigger download automatically
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = "Merged_Document_Pro.pdf";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // Confetti!
+                hideLoading();
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                
+            } catch (error) {
+                console.error("Merge error:", error);
+                alert("An error occurred while merging the PDFs.");
+                hideLoading();
+            }
+        });
+
+        function showLoading(text) {
+            loadingText.innerText = text;
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>

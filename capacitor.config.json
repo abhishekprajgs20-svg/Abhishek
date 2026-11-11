@@ -1,0 +1,7 @@
+{
+  "appId": "com.abhishek.app",
+  "appName": "ABHISHEK",
+  "webDir": "www",
+  "backgroundColor": "#0b1020",
+  "android": { "allowMixedContent": false }
+}

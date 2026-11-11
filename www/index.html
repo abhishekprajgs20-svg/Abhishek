@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<title>ABHISHEK</title>
+<style>
+:root{
+  --bg:#0b1020; --bg2:#121a33; --card:#161f3d; --line:rgba(255,255,255,.08);
+  --text:#eef1ff; --muted:#8e98c0; --a1:#ffb703; --a2:#fb5607;
+  --top:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));
+  --bot:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;overflow:hidden}
+#home{position:absolute;inset:0;overflow-y:auto;padding:calc(var(--top) + 18px) 18px calc(var(--bot) + 110px);
+  background:radial-gradient(900px 420px at 85% -10%,rgba(251,86,7,.18),transparent 60%),
+             radial-gradient(700px 380px at -10% 0%,rgba(255,183,3,.12),transparent 55%),var(--bg)}
+.brand{font-weight:900;font-size:34px;letter-spacing:.14em;line-height:1;
+  background:linear-gradient(90deg,var(--a1),var(--a2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);font-size:13px;margin:6px 0 18px;letter-spacing:.04em}
+.search{width:100%;padding:13px 16px;border-radius:14px;border:1px solid var(--line);background:var(--bg2);
+  color:var(--text);font-size:15px;outline:none;margin-bottom:18px}
+.search:focus{border-color:rgba(255,183,3,.55)}
+.sec{font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:6px 2px 10px;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:22px}
+@media(min-width:620px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card{position:relative;background:linear-gradient(160deg,var(--card),var(--bg2));border:1px solid var(--line);
+  border-radius:20px;padding:14px;min-height:140px;display:flex;flex-direction:column;gap:10px;cursor:pointer;
+  transition:transform .12s ease,border-color .12s ease;text-align:left;color:inherit;font:inherit}
+.card:active{transform:scale(.97);border-color:rgba(255,183,3,.5)}
+.av{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;font-weight:800;color:#fff;flex:none}
+.ct{font-weight:700;font-size:14.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.cs{font-size:11.5px;color:var(--muted);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chip{position:absolute;top:12px;right:44px;font-size:9.5px;font-weight:800;letter-spacing:.08em;padding:3px 7px;border-radius:99px;
+  background:rgba(255,183,3,.15);color:var(--a1)}
+.del{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:10px;border:0;background:rgba(255,255,255,.07);
+  color:var(--muted);font-size:15px;display:grid;place-items:center;cursor:pointer}
+.empty{color:var(--muted);font-size:14px;line-height:1.6;padding:26px 14px;text-align:center;border:1px dashed var(--line);border-radius:18px}
+.fab{position:fixed;right:18px;bottom:calc(var(--bot) + 18px);z-index:5;display:flex;align-items:center;gap:8px;border:0;
+  padding:15px 20px;border-radius:99px;font-weight:800;font-size:14.5px;color:#1a1200;cursor:pointer;
+  background:linear-gradient(90deg,var(--a1),var(--a2));box-shadow:0 10px 28px rgba(251,86,7,.35)}
+.fab:active{transform:scale(.96)}
+#viewer{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);z-index:10}
+#viewer.on{display:flex}
+.bar{display:flex;align-items:center;gap:6px;padding:calc(var(--top) + 6px) 8px 8px;background:var(--bg2);border-bottom:1px solid var(--line)}
+.ib{width:42px;height:42px;border-radius:12px;border:0;background:transparent;color:var(--text);display:grid;place-items:center;cursor:pointer}
+.ib:active{background:rgba(255,255,255,.08)}
+.vt{flex:1;font-weight:700;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#holder{position:relative;flex:1;background:#fff;padding-bottom:var(--bot)}
+#holder iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+#load{position:absolute;inset:0;display:grid;place-items:center;background:var(--bg);z-index:2}
+#load.off{display:none}
+.spin{width:34px;height:34px;border:4px solid rgba(255,255,255,.15);border-top-color:var(--a1);border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+#toast{position:fixed;left:50%;bottom:calc(var(--bot) + 92px);transform:translateX(-50%) translateY(20px);opacity:0;z-index:30;
+  background:#222b4d;color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;transition:.25s;pointer-events:none;max-width:86%;text-align:center}
+#toast.on{opacity:1;transform:translateX(-50%)}
+</style>
+</head>
+<body>
+<div id="home">
+  <div class="brand">ABHISHEK</div>
+  <div class="sub" id="count">Tools Hub</div>
+  <input class="search" id="q" type="search" placeholder="Tool dhundho..." autocomplete="off">
+  <div id="list"></div>
+</div>
+
+<button class="fab" id="add"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>HTML jodo</button>
+<input type="file" id="pick" accept=".html,.htm,text/html" multiple hidden>
+
+<div id="viewer">
+  <div class="bar">
+    <button class="ib" id="back" aria-label="Wapas"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <div class="vt" id="vt"></div>
+    <button class="ib" id="reload" aria-label="Reload"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></svg></button>
+  </div>
+  <div id="holder"><div id="load"><div class="spin"></div></div></div>
+</div>
+<div id="toast"></div>
+
+<script>
+(function(){
+  var builtin = [], mine = [], current = null, blobUrl = null, shimText = '';
+  var $ = function(id){ return document.getElementById(id); };
+
+  /* ---------- IndexedDB (jo HTML app ke andar se jodi jaati hain) ---------- */
+  var dbp = new Promise(function(res, rej){
+    try {
+      var r = indexedDB.open('abhishek-hub', 1);
+      r.onupgradeneeded = function(){ r.result.createObjectStore('tools', { keyPath: 'id' }); };
+      r.onsuccess = function(){ res(r.result); };
+      r.onerror = function(){ rej(r.error); };
+    } catch (e) { rej(e); }
+  });
+  function tx(mode, fn){
+    return dbp.then(function(db){
+      return new Promise(function(res, rej){
+        var t = db.transaction('tools', mode), s = t.objectStore('tools'), out = fn(s);
+        t.oncomplete = function(){ res(out && out.result); };
+        t.onerror = function(){ rej(t.error); };
+      });
+    });
+  }
+  var dbAll = function(){ return tx('readonly', function(s){ return s.getAll(); }); };
+  var dbPut = function(o){ return tx('readwrite', function(s){ return s.put(o); }); };
+  var dbDel = function(id){ return tx('readwrite', function(s){ return s.delete(id); }); };
+
+  /* ---------- helpers ---------- */
+  function toast(msg){ var t = $('toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 2400); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function hue(s){ var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; }
+  function split(title){
+    var t = String(title || 'Tool').replace(/\s+/g, ' ').trim();
+    var emo = t.match(/^(\p{Extended_Pictographic}\uFE0F?)\s*/u), icon;
+    if (emo) { icon = emo[1]; t = t.slice(emo[0].length); } else { icon = (t.trim()[0] || '•').toUpperCase(); }
+    var p = t.split(/\s+[—–|]\s+/);
+    return { icon: icon, main: p[0] || t, rest: p.slice(1).join(' · ') };
+  }
+  function titleFromHtml(html, fallback){
+    var m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    var t = m ? m[1].replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim() : '';
+    return t || fallback.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ');
+  }
+
+  /* ---------- list ---------- */
+  function card(t, isMine){
+    var s = split(t.title), h = hue(t.id);
+    return '<div class="card" data-id="' + esc(t.id) + '" data-mine="' + (isMine ? 1 : 0) + '" role="button">' +
+      '<div class="av" style="background:linear-gradient(135deg,hsl(' + h + ',75%,55%),hsl(' + ((h + 40) % 360) + ',80%,45%))">' + esc(s.icon) + '</div>' +
+      '<div class="ct">' + esc(s.main) + '</div>' + (s.rest ? '<div class="cs">' + esc(s.rest) + '</div>' : '') +
+      (isMine ? '<span class="chip">MERA</span><button class="del" data-del="' + esc(t.id) + '" aria-label="Hatao">✕</button>' : '') + '</div>';
+  }
+  function render(){
+    var q = $('q').value.trim().toLowerCase();
+    var f = function(a){ return a.filter(function(t){ return !q || t.title.toLowerCase().indexOf(q) > -1; }); };
+    var b = f(builtin), m = f(mine), html = '';
+    if (b.length) html += '<div class="sec">Tools</div><div class="grid">' + b.map(function(t){ return card(t, false); }).join('') + '</div>';
+    if (m.length) html += '<div class="sec">Meri jodi hui HTML</div><div class="grid">' + m.map(function(t){ return card(t, true); }).join('') + '</div>';
+    if (!html) html = '<div class="empty">' + (q ? 'Kuch nahi mila.' : 'Abhi koi tool nahi hai.<br>Neeche <b>HTML jodo</b> dabao ya project ke <b>tools</b> folder me HTML daalo.') + '</div>';
+    $('list').innerHTML = html;
+    $('count').textContent = (builtin.length + mine.length) + ' tools';
+  }
+  $('q').addEventListener('input', render);
+  $('list').addEventListener('click', function(e){
+    var d = e.target.closest('[data-del]');
+    if (d) { e.stopPropagation(); removeMine(d.getAttribute('data-del')); return; }
+    var c = e.target.closest('.card');
+    if (c) openTool(c.getAttribute('data-id'), c.getAttribute('data-mine') === '1');
+  });
+
+  /* ---------- tool kholna ---------- */
+  function openTool(id, isMine){
+    var t = (isMine ? mine : builtin).filter(function(x){ return x.id === id; })[0];
+    if (!t) return;
+    current = { t: t, mine: isMine };
+    $('vt').textContent = split(t.title).main;
+    $('viewer').classList.add('on');
+    $('load').classList.remove('off');
+    history.pushState({ tool: id }, '');
+    mount();
+  }
+  function mount(){
+    var old = document.querySelector('#holder iframe'); if (old) old.remove();
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+    var f = document.createElement('iframe');
+    f.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
+    f.addEventListener('load', function(){ $('load').classList.add('off'); });
+    $('holder').appendChild(f);
+    var t = current.t;
+    if (!current.mine) { f.src = 'tools/' + encodeURIComponent(t.file); return; }
+    var inject = '<script>window.__TOOL_NS=' + JSON.stringify('u_' + t.id + ':') + ';<\/script><script>' + shimText.replace(/<\/script/gi, '<\\/script') + '<\/script>';
+    var html = t.html, m = html.match(/<head[^>]*>/i);
+    html = m ? html.replace(m[0], m[0] + inject) : inject + html;
+    blobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+    f.src = blobUrl;
+  }
+  function closeTool(fromPop){
+    var old = document.querySelector('#holder iframe'); if (old) old.remove();
+    if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+    $('viewer').classList.remove('on');
+    var had = current; current = null;
+    if (had && !fromPop && history.state && history.state.tool) history.back();
+  }
+  $('back').addEventListener('click', function(){ closeTool(false); });
+  $('reload').addEventListener('click', function(){ if (current) { $('load').classList.remove('off'); mount(); } });
+  window.addEventListener('popstate', function(e){
+    if (current && !(e.state && e.state.tool)) closeTool(true);
+  });
+
+  /* ---------- HTML jodna / hatana ---------- */
+  $('add').addEventListener('click', function(){ $('pick').click(); });
+  $('pick').addEventListener('change', function(){
+    var files = Array.prototype.slice.call(this.files || []), input = this;
+    if (!files.length) return;
+    Promise.all(files.map(function(f){
+      return f.text().then(function(html){
+        var id = 'u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        return dbPut({ id: id, title: titleFromHtml(html, f.name), html: html, added: Date.now() });
+      });
+    })).then(function(){ toast(files.length + ' HTML jud gayi ✓'); return loadMine(); })
+      .catch(function(e){ toast('Nahi judi: ' + (e && e.message || e)); })
+      .then(function(){ input.value = ''; });
+  });
+  function removeMine(id){
+    var t = mine.filter(function(x){ return x.id === id; })[0];
+    if (!t || !confirm('"' + split(t.title).main + '" app se hata dein?')) return;
+    dbDel(id).then(loadMine).then(function(){ toast('Hata di'); });
+  }
+  function loadMine(){
+    return dbAll().then(function(a){ mine = (a || []).sort(function(x, y){ return y.added - x.added; }); render(); })
+      .catch(function(){ mine = []; render(); });
+  }
+
+  /* ---------- start ---------- */
+  fetch('tool-shim.js').then(function(r){ return r.text(); }).then(function(t){ shimText = t; }).catch(function(){});
+  fetch('tools.json', { cache: 'no-store' }).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; })
+    .then(function(a){ builtin = a; return loadMine(); });
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+})();
+</script>
+</body>
+</html>
